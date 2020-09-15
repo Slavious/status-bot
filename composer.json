@@ -5,6 +5,8 @@
         "php": ">=7.2.5",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "doctrine/annotations": "^1.10",
+        "doctrine/inflector": "1.4",
         "irazasyed/telegram-bot-sdk": "^2.0",
         "symfony/apache-pack": "^1.0",
         "symfony/console": "5.1.*",
@@ -14,6 +16,7 @@
         "symfony/yaml": "5.1.*"
     },
     "require-dev": {
+        "symfony/maker-bundle": "^1.21"
     },
     "config": {
         "optimize-autoloader": true,
