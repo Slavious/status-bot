@@ -1,0 +1,7 @@
+parameters:
+  sites:
+    - { bikestore_prod: bikestore.cc }
+    - { bikestore_stage: stage-bikestore.awag-it.de }
+    - { bikestore_dev: dev-bikestore.awag-it.de }
+    - { bikemarket_stage: stage-bikemarket.awag-it.de }
+    - { bikemarket_dev: dev-bikemarket.awag-it.de }
