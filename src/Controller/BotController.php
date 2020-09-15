@@ -4,19 +4,22 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
-use Telegram\Bot\Api;
+use Borsaco\TelegramBotApiBundle\Service\Bot;
+
 
 class BotController extends AbstractController
 {
     /**
      * @Route("/bot", name="bot")
      */
-    public function index()
+    public function index(Bot $bot)
     {
-        $telegram = new Api('1175350235:AAGbjjNDfrJlbmx9FUViD25EJsA7OIwKuhc');
-        $result = $telegram->getWebhookUpdates();
+        $firstBot = $bot->getBot('status');
+        $me = $firstBot->getMe();
+        $updateArray = $firstBot->getWebhookUpdate();
+        var_dump($me);
 
-        var_dump($telegram);
+
         die();
     }
 }
