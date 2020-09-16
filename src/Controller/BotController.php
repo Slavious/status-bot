@@ -45,23 +45,30 @@ class BotController extends AbstractController
             $chatId = $update["message"]["chat"]["id"];
             $message = $update["message"]["text"];
 
+            $text = '';
             if (strpos($message, "/start") === 0) {
                 foreach ($this->params->get('sites') as $domain) {
                     foreach ($domain as $name => $site) {
-                        $status = $siteStatus->getStatus($site);
-                        switch ($status) {
-                            case 0:
-                            case 503:
-                            case 403:
-                                $text = sprintf('Site "%s" answer with %s code.', $site, $status) . "\n\r";
-                                $statusBot->sendMessage(['chat_id' => $chatId, 'text' => $text]);
-                                break;
+                        if (strpos($site, 'bikestore.cc') !== false || strpos($site, 'stage-bikemarket') !== false) {
+                            $status = $siteStatus->getStatus($site);
+                            switch ($status) {
+                                case 0:
+                                case 503:
+                                case 403:
+                                case 200:
+                                    $text .= sprintf('Site "%s" answer with %s code.', $site, $status) . "\n\r";
+                                    break;
+                                default:
+                                    $text = 'All is ok';
+                                    break;
+                            }
                         }
                     }
                 }
+                $statusBot->sendMessage(['chat_id' => $chatId, 'text' => $text]);
             }
         }
-        return $this->json(['OK']);
+        exit();
     }
 
 }
