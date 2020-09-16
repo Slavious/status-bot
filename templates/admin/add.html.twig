@@ -1,0 +1,29 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block body %}
+<div class="container" id="main">
+    <div class="row">
+        <form id="add-new-site">
+            <div class="form-group">
+                <label for="site-name">Site name</label>
+                <input required id="site-name" class="form-control" name="name">
+            </div>
+            <div class="form-group">
+                <label for="domain">Domain</label>
+                <input required id="domain" class="form-control" name="domain">
+            </div>
+            <div class="form-group">
+                <label for="priority" name="priority">Priority</label>
+                <select class="form-control" id="priority">
+                    <option value="1">Low</option>
+                    <option value="2">Medium</option>
+                    <option value="3">High</option>
+                </select>
+            </div>
+        </form>
+    </div>
+    <div class="btn-group btn-group-lg" id="button-save" role="group" aria-label="">
+        <button class="btn btn-secondary" @click="addNewSite">Add new</button>
+    </div>
+</div>
+{% endblock %}
