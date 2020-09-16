@@ -1,0 +1,26 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block body %}
+    <div class="row">
+        <div class="col">
+            <table class="table">
+                <thead>
+                    <th scope="col">#</th>
+                    <th scope="col">name</th>
+                    <th scope="col">domain</th>
+                    <th scope="col">priority</th>
+                </thead>
+                <tbody>
+                    {% for site in sites %}
+                        <tr>
+                            <td>{{ site.id }}</td>
+                            <td>{{ site.name }}</td>
+                            <td>{{ site.domain }}</td>
+                            <td>{{ site.priority }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

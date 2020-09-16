@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\TelegramAccount;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Routing\Annotation\Route;
@@ -34,34 +35,30 @@ class BotController extends AbstractController
     }
 
     /**
-     * @Route ("/bot/webhook", name="webhook")
+     * @Route ("/bot/check-updates", name="webhook")
      */
     public function webhook(Bot $bot)
     {
-        $siteStatus = new SiteStatus();
         $statusBot = $bot->getBot('status');
-        $update = $statusBot->getWebhookUpdate();
-        if (isset($update['message'])) {
-            $chatId = $update["message"]["chat"]["id"];
-            $message = $update["message"]["text"];
+        $update = $statusBot->getUpdates();
 
-            if (strpos($message, "/start") === 0) {
-                foreach ($this->params->get('sites') as $domain) {
-                    foreach ($domain as $name => $site) {
-                        $status = $siteStatus->getStatus($site);
-                        switch ($status) {
-                            case 0:
-                            case 503:
-                            case 403:
-                                $text = sprintf('Site "%s" answer with %s code.', $site, $status) . "\n\r";
-                                $statusBot->sendMessage(['chat_id' => $chatId, 'text' => $text]);
-                                break;
-                        }
-                    }
+        if ($update) {
+            foreach ($update as $item) {
+                $chatId = $item["message"]["chat"]["id"];
+                $title = $item['message']['chat']['title'];
+
+                $chatExists = $this->getDoctrine()->getRepository(TelegramAccount::class)->isChatExists($chatId);
+                if (!$chatExists) {
+                    $telegramAccount = new TelegramAccount();
+                    $telegramAccount->setName($title);
+                    $telegramAccount->setChatId($chatId);
+                    $telegramAccount->setActive(true);
+
+                    $this->getDoctrine()->getManager()->persist($telegramAccount);
+                    $this->getDoctrine()->getManager()->flush();
                 }
             }
         }
-        return $this->json(['OK']);
     }
 
 }
