@@ -59,6 +59,7 @@ class BotController extends AbstractController
                 }
             }
         }
+        exit();
     }
 
 }

@@ -34,6 +34,11 @@ class Curl
         return $this->info['http_code'];
     }
 
+    public function getLatency()
+    {
+        return $this->info['total_time'];
+    }
+
     /**
      * @return array
      */

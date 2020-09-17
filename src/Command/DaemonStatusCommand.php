@@ -3,7 +3,9 @@
 namespace App\Command;
 
 use App\Entity\Site;
+use App\Entity\Status;
 use App\Entity\TelegramAccount;
+use App\Model\Daemon;
 use App\Model\SiteStatus;
 use Borsaco\TelegramBotApiBundle\Service\Bot;
 use Doctrine\ORM\EntityManager;
@@ -25,10 +27,13 @@ class DaemonStatusCommand extends Command
      */
     private $container;
 
+    private $doctrine;
+
     public function __construct(ContainerInterface $container)
     {
         parent::__construct();
         $this->container = $container;
+        $this->doctrine = $this->container->get('doctrine')->getManager();
     }
 
     protected function configure()
@@ -43,26 +48,46 @@ class DaemonStatusCommand extends Command
         $bot = new Bot($this->container);
         $statusBot = $bot->getBot('status');
 
-        $this->process($statusBot);
+        $this->process($statusBot, $output);
 
         return Command::SUCCESS;
     }
 
-    private function process(Api $statusBot)
+    private function process(Api $statusBot, OutputInterface $output)
     {
         /** @var EntityManager $doctrine */
-        $doctrine = $this->container->get('doctrine')->getManager();
-        $sites = $doctrine->getRepository(Site::class)->findAll();
-        $chat = $doctrine->getRepository(TelegramAccount::class)->find(1);
+        $sites = $this->doctrine->getRepository(Site::class)->findBy(['priority' => 3]);
+        $chat = $this->doctrine->getRepository(TelegramAccount::class)->find(1);
 
+        $text = '';
         /** @var Site $site */
         foreach ($sites as $site) {
-            $statuses = new SiteStatus();
-            $status = $statuses->getStatus($site->getDomain());
-            switch ($status) {
-                case 200:
-                    $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => 'test']);
+            $statuses = new SiteStatus($site->getDomain());
+            $status = $statuses->getStatus();
+            $latency = $statuses->getLatency();
+            if ($status !== 200) {
+                $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $status, $latency) . "\n\r";
+                $output->writeln($text);
+                $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
             }
+            $this->log($status, $latency, $site);
         }
+    }
+
+    public function log($httCode, $latency, $site)
+    {
+        $log = new Status();
+        $log->setDatetime(new \DateTime());
+        $log->setHttpCode($httCode);
+        $log->setLatency($latency);
+        $log->addSite($site);
+
+        try {
+            $this->doctrine->persist($log);
+            $this->doctrine->flush();
+        } catch (\PDOException $exception) {
+
+        }
+
     }
 }

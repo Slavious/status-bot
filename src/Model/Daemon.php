@@ -7,9 +7,8 @@ use Borsaco\TelegramBotApiBundle\Service\Bot;
 
 class Daemon
 {
-    private $params;
 
-    public function process()
+    public function process($object, $bot)
     {
         $stop = false;
 
@@ -20,9 +19,8 @@ class Daemon
             die('Die parent process' . PHP_EOL);
         } else {
             while(!$stop) {
-
-
-
+                $object->process($bot);
+                sleep(5);
             }
         }
 

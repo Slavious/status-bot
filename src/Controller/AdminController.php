@@ -30,6 +30,10 @@ class AdminController extends AbstractController
      */
     public function newSite(Request $request)
     {
+        $user = $this->container->get('security.token_storage')->getToken()->getUser();
+        if (!$user) {
+            return $this->redirect('login');
+        }
         $name = $request->get('name');
         $domain = $request->get('domain');
         $priority = $request->get('priority');
@@ -54,6 +58,10 @@ class AdminController extends AbstractController
      */
     public function siteList()
     {
+        $user = $this->container->get('security.token_storage')->getToken()->getUser();
+        if (!$user) {
+            return $this->redirect('login');
+        }
         $sites = $this->getDoctrine()->getRepository(Site::class)->findAll();
         return $this->render('admin/list.html.twig', ['sites' => $sites]);
     }
@@ -63,6 +71,10 @@ class AdminController extends AbstractController
      */
     public function siteLog($site)
     {
+        $user = $this->container->get('security.token_storage')->getToken()->getUser();
+        if (!$user) {
+            return $this->redirect('login');
+        }
         $statuses = $this
             ->getDoctrine()
             ->getRepository(Status::class)
@@ -77,6 +89,10 @@ class AdminController extends AbstractController
      */
     public function addSite()
     {
+        $user = $this->container->get('security.token_storage')->getToken()->getUser();
+        if (!$user) {
+            return $this->redirect('login');
+        }
         return $this->render('admin/add.html.twig');
     }
 }

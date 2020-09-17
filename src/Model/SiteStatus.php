@@ -4,9 +4,21 @@ namespace App\Model;
 
 class SiteStatus
 {
-    public function getStatus($url)
+    private $curlInfo;
+
+    public function __construct($url)
     {
-        $curl = new Curl($url);
-        return $curl->getStatus();
+        $this->curlInfo = new Curl($url);
     }
+
+    public function getStatus()
+    {
+        return $this->curlInfo->getStatus();
+    }
+
+    public function getLatency()
+    {
+        return $this->curlInfo->getLatency();
+    }
+
 }
