@@ -30,7 +30,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * @Route("/new-site", name="new_site")
+     * @Route("/admin/new-site", name="new_site")
      */
     public function newSite(Request $request)
     {
@@ -58,7 +58,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * @Route("/site-list", name="site_list")
+     * @Route("/admin/site-list", name="site_list")
      */
     public function siteList()
     {
@@ -71,7 +71,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * @Route("/site-log/{site}", name="site_log")
+     * @Route("/admin/site-log/{site}", name="site_log")
      */
     public function siteLog($site)
     {
@@ -86,7 +86,7 @@ class AdminController extends BaseController
                 'log_site' => $site,
             ]);
 
-        $chartArray = [['day', 'latency(seconds)']];
+        $chartArray = [['datetime', 'latency(seconds)']];
         foreach ($statuses as $status) {
             $chartArray[] = [$status->getDatetime()->format('m-d h:m'), round($status->getLatency(), 2)];
         }
@@ -105,7 +105,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * @Route("/site-add", name="site_add")
+     * @Route("/admin/site-add", name="site_add")
      */
     public function addSite()
     {
