@@ -2,6 +2,9 @@
     "borsaco/telegram-bot-api-bundle": {
         "version": "1.0.5"
     },
+    "cmen/google-charts-bundle": {
+        "version": "3.2.1"
+    },
     "composer/package-versions-deprecated": {
         "version": "1.11.99"
     },

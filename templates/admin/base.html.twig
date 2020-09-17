@@ -15,20 +15,26 @@
                 aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             <div class="navbar-nav">
                 <a class="nav-link active" href="{{ path('site_list') }}">Site list<span class="sr-only"></span></a>
                 <a class="nav-link active" href="{{ path('site_add') }}">Site add<span class="sr-only"></span></a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Dropdown link
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        {% for site in siteLogs %}
+                            <a class="dropdown-item" href="{{ path('site_log', { site: site.id }) }}">{{ site.name }}</a>
+                        {% endfor %}
+                    </div>
+                </li>
             </div>
-        </div>
-        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <a class="dropdown-item" href="#">Action</a>
-            <a class="dropdown-item" href="#">Another action</a>
         </div>
     </nav>
     {% block body %}{% endblock %}
     {% block javascripts %}{% endblock %}
-
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"

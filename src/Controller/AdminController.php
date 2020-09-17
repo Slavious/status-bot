@@ -6,11 +6,8 @@ use App\Entity\Site;
 use App\Entity\Status;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Borsaco\TelegramBotApiBundle\Service\Bot;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\VarDumper\VarDumper;
 
-class AdminController extends AbstractController
+class AdminController extends BaseController
 {
     /**
      * @Route("/admin", name="admin")
@@ -79,7 +76,7 @@ class AdminController extends AbstractController
             ->getDoctrine()
             ->getRepository(Status::class)
             ->findBy([
-                'site' => $site,
+                'id' => $site,
             ]);
         return $this->render('admin/log.html.twig', ['statuses' => $statuses]);
     }

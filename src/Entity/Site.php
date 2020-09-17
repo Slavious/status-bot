@@ -35,9 +35,9 @@ class Site
     private $priority;
 
     /**
-     * @ORM\ManyToMany(targetEntity=Status::class, mappedBy="site")
+     * @ORM\OneToMany(targetEntity=Status::class, mappedBy="log_site")
      */
-    private $statuses;
+    private $log_statuses;
 
     public function __toString()
     {
@@ -47,6 +47,7 @@ class Site
     public function __construct()
     {
         $this->statuses = new ArrayCollection();
+        $this->log_statuses = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -93,26 +94,29 @@ class Site
     /**
      * @return Collection|Status[]
      */
-    public function getStatuses(): Collection
+    public function getLogStatuses(): Collection
     {
-        return $this->statuses;
+        return $this->log_statuses;
     }
 
-    public function addStatus(Status $status): self
+    public function addLogStatus(Status $logStatus): self
     {
-        if (!$this->statuses->contains($status)) {
-            $this->statuses[] = $status;
-            $status->addSite($this);
+        if (!$this->log_statuses->contains($logStatus)) {
+            $this->log_statuses[] = $logStatus;
+            $logStatus->setLogSite($this);
         }
 
         return $this;
     }
 
-    public function removeStatus(Status $status): self
+    public function removeLogStatus(Status $logStatus): self
     {
-        if ($this->statuses->contains($status)) {
-            $this->statuses->removeElement($status);
-            $status->removeSite($this);
+        if ($this->log_statuses->contains($logStatus)) {
+            $this->log_statuses->removeElement($logStatus);
+            // set the owning side to null (unless already changed)
+            if ($logStatus->getLogSite() === $this) {
+                $logStatus->setLogSite(null);
+            }
         }
 
         return $this;

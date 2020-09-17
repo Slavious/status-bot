@@ -80,7 +80,7 @@ class DaemonStatusCommand extends Command
         $log->setDatetime(new \DateTime());
         $log->setHttpCode($httCode);
         $log->setLatency($latency);
-        $log->addSite($site);
+        $log->setLogSite($site);
 
         try {
             $this->doctrine->persist($log);

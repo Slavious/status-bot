@@ -20,11 +20,6 @@ class Status
     private $id;
 
     /**
-     * @ORM\ManyToMany(targetEntity=Site::class, inversedBy="statuses")
-     */
-    private $site;
-
-    /**
      * @ORM\Column(type="integer")
      */
     private $http_code;
@@ -39,6 +34,16 @@ class Status
      */
     private $datetime;
 
+    /**
+     * @ORM\ManyToOne(targetEntity=Site::class, inversedBy="log_statuses")
+     */
+    private $log_site;
+
+    public function __toString()
+    {
+       return $this->getLogSite()->getName();
+    }
+
     public function __construct()
     {
         $this->site = new ArrayCollection();
@@ -47,32 +52,6 @@ class Status
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    /**
-     * @return Collection|Site[]
-     */
-    public function getSite(): Collection
-    {
-        return $this->site;
-    }
-
-    public function addSite(Site $site): self
-    {
-        if (!$this->site->contains($site)) {
-            $this->site[] = $site;
-        }
-
-        return $this;
-    }
-
-    public function removeSite(Site $site): self
-    {
-        if ($this->site->contains($site)) {
-            $this->site->removeElement($site);
-        }
-
-        return $this;
     }
 
     public function getHttpCode(): ?int
@@ -107,6 +86,18 @@ class Status
     public function setDatetime(\DateTimeInterface $datetime): self
     {
         $this->datetime = $datetime;
+
+        return $this;
+    }
+
+    public function getLogSite(): ?Site
+    {
+        return $this->log_site;
+    }
+
+    public function setLogSite(?Site $log_site): self
+    {
+        $this->log_site = $log_site;
 
         return $this;
     }
