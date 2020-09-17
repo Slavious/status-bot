@@ -4,12 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Site;
 use App\Entity\Status;
-use CMEN\GoogleChartsBundle\GoogleCharts\Charts\AreaChart;
-use CMEN\GoogleChartsBundle\GoogleCharts\Charts\CalendarChart;
-use CMEN\GoogleChartsBundle\GoogleCharts\Charts\Histogram;
-use CMEN\GoogleChartsBundle\GoogleCharts\Charts\LineChart;
-use CMEN\GoogleChartsBundle\GoogleCharts\Charts\PieChart;
-use CMEN\GoogleChartsBundle\GoogleCharts\Charts\ScatterChart;
+use App\Repository\StatusRepository;
+use CMEN\GoogleChartsBundle\GoogleCharts\Charts\Material\LineChart;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\VarDumper\VarDumper;
@@ -71,29 +67,44 @@ class AdminController extends BaseController
     }
 
     /**
-     * @Route("/admin/site-log/{site}", name="site_log")
+     * @Route("/admin/site-log/{site}/{period}", name="site_log", defaults={"period": "hour"})
      */
-    public function siteLog($site)
+    public function siteLog($site, $period)
     {
         $user = $this->container->get('security.token_storage')->getToken()->getUser();
         if (!$user) {
             return $this->redirect('login');
         }
+
         $statuses = $this
             ->getDoctrine()
             ->getRepository(Status::class)
-            ->findBy([
-                'log_site' => $site,
-            ]);
+           ->getLogsBySite($site, $period);
+
+        $dateFormat = '';
+        switch ($period) {
+            case StatusRepository::PERIOD_HOUR:
+                $dateFormat = 'H:m:s';
+                break;
+            case StatusRepository::PERIOD_DAY:
+                $dateFormat = 'H:m';
+                break;
+            case StatusRepository::PERIOD_MONTH:
+                $dateFormat = 'M Y';
+                break;
+            case StatusRepository::PERIOD_YEAR:
+                $dateFormat = 'Y';
+                break;
+        }
 
         $chartArray = [['datetime', 'latency(seconds)']];
         foreach ($statuses as $status) {
-            $chartArray[] = [$status->getDatetime()->format('m-d h:m'), round($status->getLatency(), 2)];
+            $chartArray[] = [$status['datetime']->format($dateFormat), round($status['latency'], 2)];
         }
 
-        $chart = new \CMEN\GoogleChartsBundle\GoogleCharts\Charts\Material\LineChart();
+        $chart = new LineChart();
         $chart->getData()->setArrayToDataTable(
-                $chartArray
+            $chartArray
         );
 
         $chart->getOptions()

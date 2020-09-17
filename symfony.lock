@@ -1,4 +1,7 @@
 {
+    "beberlei/doctrineextensions": {
+        "version": "v1.2.7"
+    },
     "borsaco/telegram-bot-api-bundle": {
         "version": "1.0.5"
     },

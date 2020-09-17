@@ -2,6 +2,15 @@
 
 {% block body %}
     <div class="container">
+        <form>
+            {% set site = app.request.get('site') %}
+            <div class="btn-group" role="group" aria-label="Basic example" style="margin: 10px">
+                <a type="button" href="{{ path('site_log', { site: site, period: 'hour' }) }}" class="btn btn-secondary">By hour</a>
+                <a type="button" href="{{ path('site_log', { site: site, period: 'day' }) }}" class="btn btn-secondary">By day</a>
+                <a type="button" href="{{ path('site_log', { site: site, period: 'month' }) }}" class="btn btn-secondary">By month</a>
+                <a type="button" href="{{ path('site_log', { site: site, period: 'year' }) }}" class="btn btn-secondary">By Year</a>
+            </div>
+        </form>
         <div id="div_chart"></div>
     </div>
 {% endblock %}
