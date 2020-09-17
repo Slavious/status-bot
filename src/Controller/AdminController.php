@@ -4,8 +4,15 @@ namespace App\Controller;
 
 use App\Entity\Site;
 use App\Entity\Status;
+use CMEN\GoogleChartsBundle\GoogleCharts\Charts\AreaChart;
+use CMEN\GoogleChartsBundle\GoogleCharts\Charts\CalendarChart;
+use CMEN\GoogleChartsBundle\GoogleCharts\Charts\Histogram;
+use CMEN\GoogleChartsBundle\GoogleCharts\Charts\LineChart;
+use CMEN\GoogleChartsBundle\GoogleCharts\Charts\PieChart;
+use CMEN\GoogleChartsBundle\GoogleCharts\Charts\ScatterChart;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\VarDumper\VarDumper;
 
 class AdminController extends BaseController
 {
@@ -76,9 +83,25 @@ class AdminController extends BaseController
             ->getDoctrine()
             ->getRepository(Status::class)
             ->findBy([
-                'id' => $site,
+                'log_site' => $site,
             ]);
-        return $this->render('admin/log.html.twig', ['statuses' => $statuses]);
+
+        $chartArray = [['day', 'latency(seconds)']];
+        foreach ($statuses as $status) {
+            $chartArray[] = [$status->getDatetime()->format('m-d h:m'), round($status->getLatency(), 2)];
+        }
+
+        $chart = new \CMEN\GoogleChartsBundle\GoogleCharts\Charts\Material\LineChart();
+        $chart->getData()->setArrayToDataTable(
+                $chartArray
+        );
+
+        $chart->getOptions()
+            ->setHeight(400)
+            ->setWidth(900)
+            ->setSeries([['axis' => 'Time']]);
+
+        return $this->render('admin/log.html.twig', ['statuses' => $statuses, 'piechart' => $chart]);
     }
 
     /**

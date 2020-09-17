@@ -8,7 +8,7 @@
           integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
 </head>
 <body>
-<div id="main">
+<div>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="{{ path('admin') }}">Menu</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
@@ -22,7 +22,7 @@
                 <a class="nav-link active" href="{{ path('site_add') }}">Site add<span class="sr-only"></span></a>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Dropdown link
+                        Site logs
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         {% for site in siteLogs %}
@@ -45,37 +45,6 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
         integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
         crossorigin="anonymous"></script>
-<script>
-    $(document).ready(function () {
-        new Vue({
-            el: '#main',
-            data: {
-                message: 'Some word'
-            },
-            methods: {
-                addNewSite: function () {
-                    let data = {
-                        name: $("#site-name").val(),
-                        domain: $("#domain").val(),
-                        priority: $("#priority").val()
-                    };
-                    $.ajax({
-                        url: '{{ path('new_site') }}',
-                        data: data,
-                        method: 'POST',
-                        success: function (response) {
-                            if (response.error) {
-                                alert(response.error);
-                            }
-                            if (response.success) {
-                                $("#button-save").append('<p>Save success!</p>');
-                            }
-                        }
-                    });
-                }
-            }
-        });
-    });
-</script>
+
 </body>
 </html>
