@@ -9,6 +9,7 @@
                     <th scope="col">name</th>
                     <th scope="col">domain</th>
                     <th scope="col">priority</th>
+                    <th scope="col"></th>
                 </thead>
                 <tbody>
                     {% for site in sites %}
@@ -17,6 +18,11 @@
                             <td>{{ site.name }}</td>
                             <td>{{ site.domain }}</td>
                             <td>{{ site.priority }}</td>
+                            <td>
+                                <a class="btn btn-primary" href="{{ path('site_edit', { siteId: site.id }) }}">
+                                    Edit
+                                </a>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

@@ -6,7 +6,9 @@ use App\Entity\Site;
 use App\Entity\Status;
 use App\Repository\StatusRepository;
 use CMEN\GoogleChartsBundle\GoogleCharts\Charts\Material\LineChart;
+use Doctrine\DBAL\Driver\PDOException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\VarDumper\VarDumper;
 
@@ -124,5 +126,35 @@ class AdminController extends BaseController
             return $this->redirect('login');
         }
         return $this->render('admin/add.html.twig');
+    }
+
+    /**
+     * @Route ("/admin/site-edit/{siteId}", name="site_edit")
+     */
+    public function editSite($siteId, Request $request)
+    {
+        $site = $this->getDoctrine()->getRepository(Site::class)->find($siteId);
+
+        if ($request->isXmlHttpRequest()) {
+            $name = $request->get('name');
+            $domain = $request->get('domain');
+            $priority = $request->get('priority');
+
+            if ($name && $domain && $priority) {
+                try {
+                    $site->setName($name);
+                    $site->setDomain($domain);
+                    $site->setPriority($priority);
+                    $this->getDoctrine()->getManager()->persist($site);
+                    $this->getDoctrine()->getManager()->flush();
+                } catch (PDOException $exception) {
+                    throw $exception;
+                }
+                return $this->json(['success' => true]);
+            }
+
+        }
+
+        return $this->render('admin/edit.html.twig', ['site' => $site]);
     }
 }
