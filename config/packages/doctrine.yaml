@@ -22,3 +22,4 @@ doctrine:
                 DAY: DoctrineExtensions\Query\Mysql\Day
                 MONTH: DoctrineExtensions\Query\Mysql\Month
                 YEAR: DoctrineExtensions\Query\Mysql\Year
+                WEEK: DoctrineExtensions\Query\Mysql\Week

@@ -67,7 +67,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * @Route("/admin/site-log/{site}/{period}", name="site_log", defaults={"period": "hour"})
+     * @Route("/admin/site-log/{site}/{period}", name="site_log", defaults={"period": "day"})
      */
     public function siteLog($site, $period)
     {
@@ -83,11 +83,11 @@ class AdminController extends BaseController
 
         $dateFormat = '';
         switch ($period) {
-            case StatusRepository::PERIOD_HOUR:
+            case StatusRepository::PERIOD_DAY:
                 $dateFormat = 'H:m:s';
                 break;
-            case StatusRepository::PERIOD_DAY:
-                $dateFormat = 'H:m';
+            case StatusRepository::PERIOD_WEEK:
+                $dateFormat = 'd M h:m';
                 break;
             case StatusRepository::PERIOD_MONTH:
                 $dateFormat = 'M Y';
@@ -96,7 +96,6 @@ class AdminController extends BaseController
                 $dateFormat = 'Y';
                 break;
         }
-
         $chartArray = [['datetime', 'latency(seconds)']];
         foreach ($statuses as $status) {
             $chartArray[] = [$status['datetime']->format($dateFormat), round($status['latency'], 2)];
