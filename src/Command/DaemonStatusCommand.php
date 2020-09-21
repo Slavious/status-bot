@@ -56,7 +56,7 @@ class DaemonStatusCommand extends Command
     private function process(Api $statusBot, OutputInterface $output)
     {
         /** @var EntityManager $doctrine */
-        $sites = $this->doctrine->getRepository(Site::class)->findBy(['priority' => 3]);
+        $sites = $this->doctrine->getRepository(Site::class)->findAll();
         $chat = $this->doctrine->getRepository(TelegramAccount::class)->find(1);
 
         $text = '';
@@ -68,7 +68,9 @@ class DaemonStatusCommand extends Command
             if ($status !== 200) {
                 $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $status, $latency) . "\n\r";
                 $output->writeln($text);
-                $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
+                if ($site->getPriority() === 3) {
+                    $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
+                }
             }
             $this->log($status, $latency, $site);
         }

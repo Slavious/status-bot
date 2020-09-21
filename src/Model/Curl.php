@@ -45,14 +45,15 @@ class Curl
     private static function getOptions(): array
     {
         return [
-            CURLOPT_RETURNTRANSFER => true,   // return web page
-            CURLOPT_HEADER => false,  // don't return headers
-            CURLOPT_FOLLOWLOCATION => true,   // follow redirects
-            CURLOPT_MAXREDIRS => 10,     // stop after 10 redirects
-            CURLOPT_ENCODING => "",     // handle compressed
-            CURLOPT_AUTOREFERER => true,   // set referrer on redirect
-            CURLOPT_CONNECTTIMEOUT => 120,    // time-out on connect
-            CURLOPT_TIMEOUT => 120,    // time-out on response
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER => false,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_ENCODING => "",
+            CURLOPT_AUTOREFERER => true,
+            CURLOPT_CONNECTTIMEOUT => 120,
+            CURLOPT_TIMEOUT => 120,
+            CURLOPT_USERAGENT => "status-bot.awag-it.de - Test request",
         ];
     }
 
