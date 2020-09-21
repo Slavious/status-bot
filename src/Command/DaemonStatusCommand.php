@@ -8,7 +8,9 @@ use App\Entity\TelegramAccount;
 use App\Model\Daemon;
 use App\Model\SiteStatus;
 use Borsaco\TelegramBotApiBundle\Service\Bot;
+use DateTime;
 use Doctrine\ORM\EntityManager;
+use PDOException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,6 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Telegram\Bot\Api;
+use Telegram\Bot\Exceptions\TelegramSDKException;
 
 class DaemonStatusCommand extends Command
 {
@@ -29,6 +32,10 @@ class DaemonStatusCommand extends Command
 
     private $doctrine;
 
+    /**
+     * DaemonStatusCommand constructor.
+     * @param ContainerInterface $container
+     */
     public function __construct(ContainerInterface $container)
     {
         parent::__construct();
@@ -36,6 +43,9 @@ class DaemonStatusCommand extends Command
         $this->doctrine = $this->container->get('doctrine')->getManager();
     }
 
+    /**
+     *
+     */
     protected function configure()
     {
         $this
@@ -43,6 +53,11 @@ class DaemonStatusCommand extends Command
         ;
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $bot = new Bot($this->container);
@@ -53,13 +68,18 @@ class DaemonStatusCommand extends Command
         return Command::SUCCESS;
     }
 
+    /**
+     * @param Api $statusBot
+     * @param OutputInterface $output
+     * @throws TelegramSDKException
+     */
     private function process(Api $statusBot, OutputInterface $output)
     {
         /** @var EntityManager $doctrine */
         $sites = $this->doctrine->getRepository(Site::class)->findAll();
+        //TODO Rework this hardcode shit
         $chat = $this->doctrine->getRepository(TelegramAccount::class)->find(1);
 
-        $text = '';
         /** @var Site $site */
         foreach ($sites as $site) {
             $statuses = new SiteStatus($site->getDomain());
@@ -76,10 +96,15 @@ class DaemonStatusCommand extends Command
         }
     }
 
-    public function log($httCode, $latency, $site)
+    /**
+     * @param $httCode
+     * @param $latency
+     * @param $site
+     */
+    public function log(int $httCode, string $latency, Site $site)
     {
         $log = new Status();
-        $log->setDatetime(new \DateTime());
+        $log->setDatetime(new DateTime());
         $log->setHttpCode($httCode);
         $log->setLatency($latency);
         $log->setLogSite($site);
@@ -87,7 +112,7 @@ class DaemonStatusCommand extends Command
         try {
             $this->doctrine->persist($log);
             $this->doctrine->flush();
-        } catch (\PDOException $exception) {
+        } catch (PDOException $exception) {
 
         }
 

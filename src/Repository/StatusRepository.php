@@ -41,12 +41,12 @@ class StatusRepository extends ServiceEntityRepository
             case self::PERIOD_WEEK:
                 $periodStart = (new \DateTime('first day of this week'))->format('Y-m-d H:m:s');
                 $periodEnd = (new \DateTime('last day of this week'))->format('Y-m-d H:m:s');
-                $groupBy = 'log.datetime';
+                $groupBy = 'DAY(log.datetime)';
                 break;
             case self::PERIOD_MONTH:
                 $periodStart = (new \DateTime('first day of this month'))->format('Y-m-d H:m:s');
                 $periodEnd = (new \DateTime('last day of this month'))->format('Y-m-d H:m:s');
-                $groupBy = 'log.datetime';
+                $groupBy = 'MONTH(log.datetime)';
                 break;
             case self::PERIOD_YEAR:
                 $periodStart = (new \DateTime('first day of January this year'))->format('Y-m-d H:m:s');

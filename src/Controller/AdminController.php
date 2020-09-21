@@ -81,7 +81,7 @@ class AdminController extends BaseController
         $statuses = $this
             ->getDoctrine()
             ->getRepository(Status::class)
-           ->getLogsBySite($site, $period);
+            ->getLogsBySite($site, $period);
 
         $dateFormat = '';
         switch ($period) {
