@@ -82,9 +82,9 @@ class Site
         return $this;
     }
 
-    public function getPriority(): ?string
+    public function getPriority(): ?int
     {
-        return $this->priority;
+        return (int)$this->priority;
     }
 
     public function setPriority(string $priority): self

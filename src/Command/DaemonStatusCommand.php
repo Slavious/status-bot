@@ -89,6 +89,7 @@ class DaemonStatusCommand extends Command
                 $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $status, $latency) . "\n\r";
                 $output->writeln($text);
                 if ($site->getPriority() === 3) {
+                    $output->writeln('111111');
                     $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
                 }
             }
