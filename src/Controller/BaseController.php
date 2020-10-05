@@ -22,4 +22,12 @@ class BaseController extends AbstractController
         $parameters = array_merge($parameters, ['siteLogs' => $siteLogs]);
         return parent::render($view, $parameters, $response);
     }
+
+    /**
+     * @Route("/", name="main")
+     */
+    public function main()
+    {
+        return $this->redirect('admin');
+    }
 }

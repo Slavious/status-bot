@@ -14,15 +14,29 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class StatusRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
-    {
-        parent::__construct($registry, Status::class);
-    }
 
     public const PERIOD_DAY = 'day';
     public const PERIOD_WEEK = 'week';
     public const PERIOD_MONTH = 'month';
     public const PERIOD_YEAR = 'year';
+
+    public const CODE_OK = 200;
+    public const CODE_SERVER_500 = 500;
+    public const CODE_SERVER_502 = 502;
+    public const CODE_SERVER_504 = 504;
+
+    private $periodStart;
+    private $periodEnd;
+    private $groupBy;
+
+    /**
+     * StatusRepository constructor.
+     * @param ManagerRegistry $registry
+     */
+    public function __construct(ManagerRegistry $registry)
+    {
+        parent::__construct($registry, Status::class);
+    }
 
     /**
      * @param $site
@@ -31,38 +45,43 @@ class StatusRepository extends ServiceEntityRepository
      */
     public function getLogsBySite($site, $period)
     {
-        $periodStart = $periodEnd = $groupBy = false;
-        switch ($period) {
-            case self::PERIOD_DAY:
-                $periodStart = (new \DateTime('today'))->format('Y-m-d H:m:s');
-                $periodEnd = (new \DateTime('tomorrow'))->format('Y-m-d H:m:s');
-                $groupBy = 'log.datetime';
-                break;
-            case self::PERIOD_WEEK:
-                $periodStart = (new \DateTime('first day of this week'))->format('Y-m-d H:m:s');
-                $periodEnd = (new \DateTime('last day of this week'))->format('Y-m-d H:m:s');
-                $groupBy = 'DAY(log.datetime)';
-                break;
-            case self::PERIOD_MONTH:
-                $periodStart = (new \DateTime('first day of this month'))->format('Y-m-d H:m:s');
-                $periodEnd = (new \DateTime('last day of this month'))->format('Y-m-d H:m:s');
-                $groupBy = 'MONTH(log.datetime)';
-                break;
-            case self::PERIOD_YEAR:
-                $periodStart = (new \DateTime('first day of January this year'))->format('Y-m-d H:m:s');
-                $periodEnd = (new \DateTime('last day of December this year'))->format('Y-m-d H:m:s');
-                $groupBy = 'YEAR(log.datetime)';
-                break;
-        }
+        $this->getPeriod($period);
+
         return $this->createQueryBuilder('log')
-            ->select('log.datetime as datetime', 'log.latency as latency', "$groupBy as group")
+            ->select('log.datetime as datetime', 'MAX(log.latency) as max_latency', 'AVG(log.latency) as latency', "$this->groupBy as group")
             ->where('log.log_site = :site')->setParameter('site', $site)
             ->andWhere('log.datetime BETWEEN :start AND :end')
-                ->setParameter('start', $periodStart)
-                ->setParameter('end', $periodEnd)
+                ->setParameter('start', $this->periodStart)
+                ->setParameter('end', $this->periodEnd)
             ->orderBy('log.datetime')
             ->groupBy('group')
             ->getQuery()->getResult()
         ;
+    }
+
+    public function getPeriod($period)
+    {
+        switch ($period) {
+            case self::PERIOD_DAY:
+                $this->periodStart = (new \DateTime('today'))->format('Y-m-d H:m:s');
+                $this->periodEnd = (new \DateTime('tomorrow'))->format('Y-m-d H:m:s');
+                $this->groupBy = 'log.datetime';
+                break;
+            case self::PERIOD_WEEK:
+                $this->periodStart = (new \DateTime('first day of this week'))->format('Y-m-d H:m:s');
+                $this->periodEnd = (new \DateTime('last day of this week'))->format('Y-m-d H:m:s');
+                $this->groupBy = 'DAY(log.datetime)';
+                break;
+            case self::PERIOD_MONTH:
+                $this->periodStart = (new \DateTime('first day of this month'))->format('Y-m-d H:m:s');
+                $this->periodEnd = (new \DateTime('last day of this month'))->format('Y-m-d H:m:s');
+                $this->groupBy = 'MONTH(log.datetime)';
+                break;
+            case self::PERIOD_YEAR:
+                $this->periodStart = (new \DateTime('first day of January this year'))->format('Y-m-d H:m:s');
+                $this->periodEnd = (new \DateTime('last day of December this year'))->format('Y-m-d H:m:s');
+                $this->groupBy = 'YEAR(log.datetime)';
+                break;
+        }
     }
 }

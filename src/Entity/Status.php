@@ -41,7 +41,7 @@ class Status
 
     public function __toString()
     {
-       return $this->getLogSite()->getName();
+       return $this->getLogSite()->getName() ?: 'Site';
     }
 
     public function __construct()

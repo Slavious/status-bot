@@ -41,7 +41,7 @@ class BotController extends AbstractController
     {
         $statusBot = $bot->getBot('status');
         $update = $statusBot->getUpdates();
-        VarDumper::dump($update);
+
         if ($update) {
             foreach ($update as $item) {
                 $chatId = $item["message"]["chat"]["id"];

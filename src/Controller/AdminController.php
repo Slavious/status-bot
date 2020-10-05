@@ -69,7 +69,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * @Route("/admin/site-log/{site}/{period}", name="site_log", defaults={"period": "day"})
+     * @Route("/admin/site-log/{site}/{period}/{code}", name="site_log", defaults={"period": "day", "code": "all"})
      */
     public function siteLog($site, $period)
     {
@@ -98,9 +98,9 @@ class AdminController extends BaseController
                 $dateFormat = 'Y';
                 break;
         }
-        $chartArray = [['datetime', 'latency(seconds)']];
+        $chartArray = [['datetime', 'max latency(seconds)', 'average latency(seconds)']];
         foreach ($statuses as $status) {
-            $chartArray[] = [$status['datetime']->format($dateFormat), round($status['latency'], 2)];
+            $chartArray[] = [$status['datetime']->format($dateFormat), round($status['max_latency'], 2), round($status['latency'], 2)];
         }
 
         $chart = new LineChart();
@@ -109,8 +109,8 @@ class AdminController extends BaseController
         );
 
         $chart->getOptions()
-            ->setHeight(400)
-            ->setWidth(900)
+            ->setHeight(700)
+            ->setWidth(1400)
             ->setSeries([['axis' => 'Time']]);
 
         return $this->render('admin/log.html.twig', ['statuses' => $statuses, 'piechart' => $chart]);
@@ -156,5 +156,19 @@ class AdminController extends BaseController
         }
 
         return $this->render('admin/edit.html.twig', ['site' => $site]);
+    }
+
+    /**
+     * @Route ("/admin/statistic/{site}")
+     */
+    public function statistic($site)
+    {
+        $site = $this->getDoctrine()->getRepository(Site::class)->find($site);
+        $logs = $this->getDoctrine()->getRepository(StatusRepository::class)->findBy(['log_site' => $site]);
+
+        /** @var Status $log */
+        foreach ($logs as $log) {
+            $code[$log] = $log->getHttpCode();
+        }
     }
 }
