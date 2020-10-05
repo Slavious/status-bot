@@ -2,9 +2,12 @@
 
 namespace App\Repository;
 
+use App\Entity\Site;
 use App\Entity\Status;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Persistence\ManagerRegistry;
+use function Symfony\Component\String\s;
 
 /**
  * @method Status|null find($id, $lockMode = null, $lockVersion = null)
@@ -23,7 +26,9 @@ class StatusRepository extends ServiceEntityRepository
     public const CODE_OK = 200;
     public const CODE_SERVER_500 = 500;
     public const CODE_SERVER_502 = 502;
+    public const CODE_SERVER_503 = 503;
     public const CODE_SERVER_504 = 504;
+    public const CODE_SERVER_0 = 0;
 
     private $periodStart;
     private $periodEnd;
@@ -83,5 +88,10 @@ class StatusRepository extends ServiceEntityRepository
                 $this->groupBy = 'YEAR(log.datetime)';
                 break;
         }
+    }
+
+    public function getLastStatus(Site $site)
+    {
+        return $this->findOneBy(['log_site' => $site], ['datetime' => 'DESC']);
     }
 }

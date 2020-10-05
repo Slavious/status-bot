@@ -101,4 +101,9 @@ class Status
 
         return $this;
     }
+
+    public function isError(): bool
+    {
+        return $this->getHttpCode() !== 200;
+    }
 }

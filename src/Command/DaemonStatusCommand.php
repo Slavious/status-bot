@@ -7,6 +7,7 @@ use App\Entity\Status;
 use App\Entity\TelegramAccount;
 use App\Model\Daemon;
 use App\Model\SiteStatus;
+use App\Repository\StatusRepository;
 use Borsaco\TelegramBotApiBundle\Service\Bot;
 use DateTime;
 use Doctrine\ORM\EntityManager;
@@ -20,6 +21,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Telegram\Bot\Api;
 use Telegram\Bot\Exceptions\TelegramSDKException;
+use function Symfony\Component\String\b;
 
 class DaemonStatusCommand extends Command
 {
@@ -82,17 +84,41 @@ class DaemonStatusCommand extends Command
 
         /** @var Site $site */
         foreach ($sites as $site) {
-            $statuses = new SiteStatus($site->getDomain());
-            $status = $statuses->getStatus();
-            $latency = $statuses->getLatency();
-            if ($status !== 200) {
-                $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $status, $latency) . "\n\r";
-                $output->writeln($text);
-                if ($site->getPriority() === 3) {
-                    $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
-                }
+            $statusModel = new SiteStatus($site->getDomain());
+            $currentStatus = $statusModel->getStatus();
+            $latency = $statusModel->getLatency();
+
+            /** @var Status $lastStatus */
+            $lastStatus = $site->getLogStatuses()->last();
+            $output->writeln($lastStatus->getDatetime()->format('d.m.Y H:m:s'));
+
+            $now = new DateTime('now');
+            $downTimeDiff = $now->diff($lastStatus->getDatetime());
+            $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $downTimeDiff->d, $downTimeDiff->h, $downTimeDiff->i, $downTimeDiff->s);
+
+            switch ($currentStatus) {
+                case StatusRepository::CODE_OK:
+                    if ($lastStatus->getHttpCode() !== 200) {
+                        $text = sprintf('Site "%s" is currenty UP. Downtime: %s', $site->getDomain(), $downtime) . "\n\r";
+                        $output->writeln($text);
+                        $this->sendMessage($statusBot, $site, $chat, $text);
+                    }
+                    break;
+
+                case StatusRepository::CODE_SERVER_0:
+                case StatusRepository::CODE_SERVER_500:
+                case StatusRepository::CODE_SERVER_502:
+                case StatusRepository::CODE_SERVER_503:
+                case StatusRepository::CODE_SERVER_504:
+                    if ($lastStatus->getHttpCode() === 200) {
+                        $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $currentStatus, $latency) . "\n\r";
+                        $output->writeln($text);
+                        $this->sendMessage($statusBot, $site, $chat, $text);
+                    }
+                break;
             }
-            $this->log($status, $latency, $site);
+
+            $this->log($currentStatus, $latency, $site);
         }
     }
 
@@ -115,6 +141,18 @@ class DaemonStatusCommand extends Command
         } catch (PDOException $exception) {
 
         }
+    }
 
+    /**
+     * @param Api $statusBot
+     * @param Site $site
+     * @param TelegramAccount $chat
+     * @param string $text
+     */
+    public function sendMessage(Api $statusBot, Site $site, TelegramAccount $chat, string $text)
+    {
+        if ($site->getPriority() === 3) {
+            $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
+        }
     }
 }
