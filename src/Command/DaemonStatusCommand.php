@@ -90,15 +90,24 @@ class DaemonStatusCommand extends Command
 
             /** @var Status $lastStatus */
             $lastStatus = $site->getLogStatuses()->last();
-            $output->writeln($lastStatus->getDatetime()->format('d.m.Y H:m:s'));
+            $lastFailedStatus = $this->doctrine->getRepository(Status::class)->getFailedLastStatus($site);
+
+            $consoleLogMessage = sprintf('Site %s ', $site->getName());
+            $output->writeln($consoleLogMessage);
 
             $now = new DateTime('now');
-            $downTimeDiff = $now->diff($lastStatus->getDatetime());
-            $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $downTimeDiff->d, $downTimeDiff->h, $downTimeDiff->i, $downTimeDiff->s);
+            $downTimeDiff = $now->diff($lastFailedStatus[0]->getDatetime());
+
+            $days    = $downTimeDiff->d;
+            $hours   = $downTimeDiff->h;
+            $minutes = $downTimeDiff->i <= 3 ? 0 : $downTimeDiff->i;
+            $seconds = $downTimeDiff->s;
+
+            $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $days, $hours, $minutes, $seconds);
 
             switch ($currentStatus) {
                 case StatusRepository::CODE_OK:
-                    if ($lastStatus->getHttpCode() !== 200) {
+                    if ($lastFailedStatus[0]->getHttpCode() !== 200) {
                         $text = sprintf('Site "%s" is currenty UP. Downtime: %s', $site->getDomain(), $downtime) . "\n\r";
                         $output->writeln($text);
                         $this->sendMessage($statusBot, $site, $chat, $text);

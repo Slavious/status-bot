@@ -90,8 +90,15 @@ class StatusRepository extends ServiceEntityRepository
         }
     }
 
-    public function getLastStatus(Site $site)
+    public function getFailedLastStatus(Site $site)
     {
-        return $this->findOneBy(['log_site' => $site], ['datetime' => 'DESC']);
+        return $this->createQueryBuilder('s')
+            ->where('s.http_code != 200')
+            ->andWhere('s.log_site = :site')->setParameter('site', $site)
+            ->orderBy('s.datetime', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getResult()
+        ;
     }
 }

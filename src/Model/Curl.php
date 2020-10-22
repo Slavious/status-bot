@@ -51,8 +51,8 @@ class Curl
             CURLOPT_MAXREDIRS => 10,
             CURLOPT_ENCODING => "",
             CURLOPT_AUTOREFERER => true,
-            CURLOPT_CONNECTTIMEOUT => 120,
-            CURLOPT_TIMEOUT => 120,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_TIMEOUT => 15,
             CURLOPT_USERAGENT => "status-bot.awag-it.de - Test request",
         ];
     }
