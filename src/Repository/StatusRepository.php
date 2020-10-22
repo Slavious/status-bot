@@ -99,7 +99,7 @@ class StatusRepository extends ServiceEntityRepository
             ->orderBy('s.datetime', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
-            ->getResult()
+            ->getOneOrNullResult()
         ;
     }
 }
