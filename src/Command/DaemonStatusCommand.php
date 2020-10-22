@@ -84,50 +84,53 @@ class DaemonStatusCommand extends Command
 
         /** @var Site $site */
         foreach ($sites as $site) {
-            $statusModel = new SiteStatus($site->getDomain());
-            $currentStatus = $statusModel->getStatus();
-            $latency = $statusModel->getLatency();
+            if ($site->getId() === 2) {
 
-            /** @var Status $lastStatus */
-            $lastStatus = $site->getLogStatuses()->last();
-            $lastFailedStatus = $this->doctrine->getRepository(Status::class)->getFailedLastStatus($site);
+                $statusModel = new SiteStatus($site->getDomain());
+                $currentStatus = $statusModel->getStatus();
+                $latency = $statusModel->getLatency();
 
-            $consoleLogMessage = sprintf('Site %s ', $site->getName());
-            $output->writeln($consoleLogMessage);
+                /** @var Status $lastStatus */
+                $lastStatus = $site->getLogStatuses()->last();
+                $lastFailedStatus = $this->doctrine->getRepository(Status::class)->getFailedLastStatus($site);
 
-            $now = new DateTime('now');
-            $downTimeDiff = $now->diff($lastFailedStatus[0]->getDatetime());
+                $consoleLogMessage = sprintf('Site %s ', $site->getName());
+                $output->writeln($consoleLogMessage);
 
-            $days    = $downTimeDiff->d;
-            $hours   = $downTimeDiff->h;
-            $minutes = $downTimeDiff->i <= 3 ? 0 : $downTimeDiff->i;
-            $seconds = $downTimeDiff->s;
+                $now = new DateTime('now');
+                $downTimeDiff = $now->diff($lastFailedStatus[0]->getDatetime());
 
-            $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $days, $hours, $minutes, $seconds);
+                $days    = $downTimeDiff->d;
+                $hours   = $downTimeDiff->h;
+                $minutes = $downTimeDiff->i <= 3 ? 0 : $downTimeDiff->i;
+                $seconds = $downTimeDiff->s;
 
-            switch ($currentStatus) {
-                case StatusRepository::CODE_OK:
-                    if ($lastFailedStatus[0]->getHttpCode() !== 200) {
-                        $text = sprintf('Site "%s" is currenty UP. Downtime: %s', $site->getDomain(), $downtime) . "\n\r";
-                        $output->writeln($text);
-                        $this->sendMessage($statusBot, $site, $chat, $text);
-                    }
+                $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $days, $hours, $minutes, $seconds);
+
+                switch ($currentStatus) {
+                    case StatusRepository::CODE_OK:
+                        $this->log($currentStatus, $latency, $site);
+                        if ($lastStatus->getHttpCode() !== 200) {
+                            $text = sprintf('Site "%s" is currenty UP. Downtime: %s', $site->getDomain(), $downtime) . "\n\r";
+                            $output->writeln($text);
+                            //$this->sendMessage($statusBot, $site, $chat, $text);
+                        }
+                        break;
+
+                    case StatusRepository::CODE_SERVER_0:
+                    case StatusRepository::CODE_SERVER_500:
+                    case StatusRepository::CODE_SERVER_502:
+                    case StatusRepository::CODE_SERVER_503:
+                    case StatusRepository::CODE_SERVER_504:
+                        if ($lastStatus->getHttpCode() === 200) {
+                            $this->log($currentStatus, $latency, $site);
+                            $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $currentStatus, $latency) . "\n\r";
+                            $output->writeln($text);
+                            //$this->sendMessage($statusBot, $site, $chat, $text);
+                        }
                     break;
-
-                case StatusRepository::CODE_SERVER_0:
-                case StatusRepository::CODE_SERVER_500:
-                case StatusRepository::CODE_SERVER_502:
-                case StatusRepository::CODE_SERVER_503:
-                case StatusRepository::CODE_SERVER_504:
-                    if ($lastStatus->getHttpCode() === 200) {
-                        $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $currentStatus, $latency) . "\n\r";
-                        $output->writeln($text);
-                        $this->sendMessage($statusBot, $site, $chat, $text);
-                    }
-                break;
+                }
             }
-
-            $this->log($currentStatus, $latency, $site);
         }
     }
 
