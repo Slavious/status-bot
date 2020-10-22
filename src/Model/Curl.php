@@ -52,7 +52,7 @@ class Curl
             CURLOPT_ENCODING => "",
             CURLOPT_AUTOREFERER => true,
             CURLOPT_CONNECTTIMEOUT => 120,
-            CURLOPT_TIMEOUT => 120,
+            CURLOPT_TIMEOUT => 30,
             CURLOPT_USERAGENT => "status-bot.awag-it.de - Test request",
         ];
     }
