@@ -21,4 +21,9 @@ class SiteStatus
         return $this->curlInfo->getLatency();
     }
 
+    public function getContent()
+    {
+        return $this->curlInfo->getContent();
+    }
+
 }

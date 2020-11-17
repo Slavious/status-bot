@@ -19,6 +19,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Filesystem\Filesystem;
 use Telegram\Bot\Api;
 use Telegram\Bot\Exceptions\TelegramSDKException;
 use function Symfony\Component\String\b;
@@ -32,7 +33,20 @@ class DaemonStatusCommand extends Command
      */
     private $container;
 
+    /**
+     * @var EntityManager
+     */
     private $doctrine;
+
+    /**
+     * @var Filesystem
+     */
+    private $filesystem;
+
+    /**
+     * @var string
+     */
+    private $logDir;
 
     /**
      * DaemonStatusCommand constructor.
@@ -43,6 +57,7 @@ class DaemonStatusCommand extends Command
         parent::__construct();
         $this->container = $container;
         $this->doctrine = $this->container->get('doctrine')->getManager();
+        $this->logDir = $this->container->get('kernel')->getLogDir();
     }
 
     /**
@@ -51,8 +66,7 @@ class DaemonStatusCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Daemonize telegram bot')
-        ;
+            ->setDescription('Daemonize telegram bot');
     }
 
     /**
@@ -64,8 +78,19 @@ class DaemonStatusCommand extends Command
     {
         $bot = new Bot($this->container);
         $statusBot = $bot->getBot('status');
+        $this->filesystem = $this->container->get('filesystem');
 
-        $this->process($statusBot, $output);
+        $runningFile = $this->logDir . '/status.run';
+        if (!$this->filesystem->exists($runningFile)) {
+            file_put_contents($runningFile, 'running');
+            $output->writeln('Proccess started');
+            if ($this->process($statusBot, $output)) {
+                $output->writeln('Proccess finished');
+                @unlink($runningFile);
+            }
+        } else {
+            $output->writeln('Proccess is already running');
+        }
 
         return Command::SUCCESS;
     }
@@ -84,54 +109,60 @@ class DaemonStatusCommand extends Command
 
         /** @var Site $site */
         foreach ($sites as $site) {
-            if ($site->getId() === 2) {
+            $statusModel = new SiteStatus($site->getDomain());
+            $currentStatus = $statusModel->getStatus();
+            $latency = $statusModel->getLatency();
 
-                $statusModel = new SiteStatus($site->getDomain());
-                $currentStatus = $statusModel->getStatus();
-                $latency = $statusModel->getLatency();
+            /** @var Status $lastStatus */
+            $lastStatus = $site->getLogStatuses()->last();
+            $lastFailedStatus = $this->doctrine->getRepository(Status::class)->getFailedLastStatus($site);
 
-                /** @var Status $lastStatus */
-                $lastStatus = $site->getLogStatuses()->last();
-                $lastFailedStatus = $this->doctrine->getRepository(Status::class)->getFailedLastStatus($site);
-
-                $consoleLogMessage = sprintf('Site %s ', $site->getName());
+            if (!$lastStatus) {
+                $consoleLogMessage = sprintf('Site %s creating first record', $site->getName());
                 $output->writeln($consoleLogMessage);
+                $this->log($currentStatus, $latency, $site);
+                continue;
+            }
 
-                $now = new DateTime('now');
-                $downTimeDiff = $now->diff($lastFailedStatus[0]->getDatetime());
+            $consoleLogMessage = sprintf('Site %s ', $site->getName());
+            $output->writeln($consoleLogMessage);
 
-                $days    = $downTimeDiff->d;
-                $hours   = $downTimeDiff->h;
-                $minutes = $downTimeDiff->i <= 3 ? 0 : $downTimeDiff->i;
-                $seconds = $downTimeDiff->s;
-
-                $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $days, $hours, $minutes, $seconds);
-
-                switch ($currentStatus) {
-                    case StatusRepository::CODE_OK:
-                        $this->log($currentStatus, $latency, $site);
-                        if ($lastStatus->getHttpCode() !== 200) {
+            switch ($currentStatus) {
+                case StatusRepository::CODE_OK:
+                    $this->log($currentStatus, $latency, $site);
+                    if ($lastStatus->getHttpCode() !== 200) {
+                        if ($lastFailedStatus) {
+                            $now = new DateTime('now');
+                            $downTimeDiff = $now->diff($lastFailedStatus->getDatetime());
+                            $days = $downTimeDiff->d;
+                            $hours = $downTimeDiff->h;
+                            $minutes = $downTimeDiff->i <= 5 ? 0 : $downTimeDiff->i;
+                            $seconds = $downTimeDiff->s;
+                            $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $days, $hours, $minutes, $seconds);
                             $text = sprintf('Site "%s" is currenty UP. Downtime: %s', $site->getDomain(), $downtime) . "\n\r";
                             $output->writeln($text);
-                            //$this->sendMessage($statusBot, $site, $chat, $text);
+                        } else {
+                            $text = sprintf('Site "%s" is currenty UP.', $site->getDomain()) . "\n\r";
                         }
-                        break;
-
-                    case StatusRepository::CODE_SERVER_0:
-                    case StatusRepository::CODE_SERVER_500:
-                    case StatusRepository::CODE_SERVER_502:
-                    case StatusRepository::CODE_SERVER_503:
-                    case StatusRepository::CODE_SERVER_504:
-                        if ($lastStatus->getHttpCode() === 200) {
-                            $this->log($currentStatus, $latency, $site);
-                            $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $currentStatus, $latency) . "\n\r";
-                            $output->writeln($text);
-                            //$this->sendMessage($statusBot, $site, $chat, $text);
-                        }
+                        $this->sendMessage($statusBot, $site, $chat, $text);
+                    }
                     break;
-                }
+
+                case StatusRepository::CODE_SERVER_0:
+                case StatusRepository::CODE_SERVER_500:
+                case StatusRepository::CODE_SERVER_502:
+                case StatusRepository::CODE_SERVER_503:
+                case StatusRepository::CODE_SERVER_504:
+                    if ($lastStatus->getHttpCode() === 200) {
+                        $this->log($currentStatus, $latency, $site);
+                        $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $currentStatus, $latency) . "\n\r";
+                        $output->writeln($text);
+                        $this->sendMessage($statusBot, $site, $chat, $text);
+                    }
+                    break;
             }
         }
+        return true;
     }
 
     /**

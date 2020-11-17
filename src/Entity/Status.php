@@ -39,6 +39,11 @@ class Status
      */
     private $log_site;
 
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $content;
+
     public function __toString()
     {
        return $this->getLogSite()->getName() ?: 'Site';
@@ -105,5 +110,17 @@ class Status
     public function isError(): bool
     {
         return $this->getHttpCode() !== 200;
+    }
+
+    public function getContent(): ?string
+    {
+        return $this->content;
+    }
+
+    public function setContent(?string $content): self
+    {
+        $this->content = $content;
+
+        return $this;
     }
 }

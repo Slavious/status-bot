@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+
+<title>Task index</title>
+
+{% block body %}
+    <h1>Task index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Date_create</th>
+                <th>Status</th>
+                <th>Date_update</th>
+                <th>Date_end</th>
+                <th>Priority</th>
+                <th>Deadline</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for task in tasks %}
+            <tr>
+                <td>{{ task.id }}</td>
+                <td>{{ task.title }}</td>
+                <td>{{ task.description }}</td>
+                <td>{{ task.dateCreate ? task.dateCreate|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ task.status }}</td>
+                <td>{{ task.dateUpdate ? task.dateUpdate|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ task.dateEnd ? task.dateEnd|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ task.priority }}</td>
+                <td>{{ task.deadline ? task.deadline|date('Y-m-d') : '' }}</td>
+                <td>
+                    <a href="{{ path('task_show', {'id': task.id}) }}">show</a>
+                    <a href="{{ path('task_edit', {'id': task.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="10">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('task_new') }}">Create new</a>
+{% endblock %}

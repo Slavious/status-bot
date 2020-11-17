@@ -39,6 +39,11 @@ class Curl
         return $this->info['total_time'];
     }
 
+    public function getContent()
+    {
+        return $this->result;
+    }
+
     /**
      * @return array
      */
