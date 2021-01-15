@@ -121,7 +121,7 @@ class DaemonStatusCommand extends Command
             if (!$lastStatus) {
                 $consoleLogMessage = sprintf('Site %s creating first record', $site->getName());
                 $output->writeln($consoleLogMessage);
-                $this->log($currentStatus, $latency, $site);
+                $this->log($currentStatus, $latency, $site, $content);
                 continue;
             }
 
