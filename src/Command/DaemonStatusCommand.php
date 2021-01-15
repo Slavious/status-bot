@@ -112,6 +112,7 @@ class DaemonStatusCommand extends Command
             $statusModel = new SiteStatus($site->getDomain());
             $currentStatus = $statusModel->getStatus();
             $latency = $statusModel->getLatency();
+            $content = $statusModel->getContent();
 
             /** @var Status $lastStatus */
             $lastStatus = $site->getLogStatuses()->last();
@@ -129,14 +130,14 @@ class DaemonStatusCommand extends Command
 
             switch ($currentStatus) {
                 case StatusRepository::CODE_OK:
-                    $this->log($currentStatus, $latency, $site);
-                    if ($lastStatus->getHttpCode() !== 200) {
+                    $this->log($currentStatus, $latency, $site, $content);
+                    if ($lastStatus->getHttpCode() !== 200 || $this->checkContentIsError($content)) {
                         if ($lastFailedStatus) {
                             $now = new DateTime('now');
                             $downTimeDiff = $now->diff($lastFailedStatus->getDatetime());
                             $days = $downTimeDiff->d;
                             $hours = $downTimeDiff->h;
-                            $minutes = $downTimeDiff->i <= 5 ? 0 : $downTimeDiff->i;
+                            $minutes = $downTimeDiff->i <= 10 ? 0 : $downTimeDiff->i;
                             $seconds = $downTimeDiff->s;
                             $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $days, $hours, $minutes, $seconds);
                             $text = sprintf('Site "%s" is currenty UP. Downtime: %s', $site->getDomain(), $downtime) . "\n\r";
@@ -148,13 +149,13 @@ class DaemonStatusCommand extends Command
                     }
                     break;
 
-                case StatusRepository::CODE_SERVER_0:
+//                case StatusRepository::CODE_SERVER_0:
                 case StatusRepository::CODE_SERVER_500:
                 case StatusRepository::CODE_SERVER_502:
                 case StatusRepository::CODE_SERVER_503:
                 case StatusRepository::CODE_SERVER_504:
-                    if ($lastStatus->getHttpCode() === 200) {
-                        $this->log($currentStatus, $latency, $site);
+                    if ($lastStatus->getHttpCode() === 200 && !$this->checkContentIsError($content)) {
+                        $this->log($currentStatus, $latency, $site, $content);
                         $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $currentStatus, $latency) . "\n\r";
                         $output->writeln($text);
                         $this->sendMessage($statusBot, $site, $chat, $text);
@@ -165,18 +166,37 @@ class DaemonStatusCommand extends Command
         return true;
     }
 
+    private function checkContentIsError(string $content)
+    {
+        if (strpos($content, 'Exception') !== false) {
+            return true;
+        }
+        if (strpos($content, 'Error') !== false) {
+            return true;
+        }
+        if (strpos($content, 'error') !== false) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
-     * @param $httCode
-     * @param $latency
-     * @param $site
+     * @param int $httCode
+     * @param string $latency
+     * @param Site $site
+     * @param string $content
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function log(int $httCode, string $latency, Site $site)
+    public function log(int $httCode, string $latency, Site $site, string $content)
     {
         $log = new Status();
         $log->setDatetime(new DateTime());
         $log->setHttpCode($httCode);
         $log->setLatency($latency);
         $log->setLogSite($site);
+        $log->setContent($content);
 
         try {
             $this->doctrine->persist($log);
