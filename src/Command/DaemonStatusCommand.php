@@ -132,7 +132,7 @@ class DaemonStatusCommand extends Command
                 case StatusRepository::CODE_OK:
                     $this->log($currentStatus, $latency, $site, $content);
                     if ($this->checkContentIsError($content)) {
-                        $text = sprintf('Site "%s" answer with %s code. But Exception or Error exists on page', $site->getDomain(), $currentStatus) . "\n\r";
+                        $text = sprintf('Exception or Error exists on page %site', $site->getDomain()) . "\n\r";
                         $this->sendMessage($statusBot, $site, $chat, $text);
                     } else {
                         if ($lastStatus->getHttpCode() !== 200) {
