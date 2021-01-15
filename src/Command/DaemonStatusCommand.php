@@ -131,21 +131,26 @@ class DaemonStatusCommand extends Command
             switch ($currentStatus) {
                 case StatusRepository::CODE_OK:
                     $this->log($currentStatus, $latency, $site, $content);
-                    if ($lastStatus->getHttpCode() !== 200 || $this->checkContentIsError($content)) {
-                        if ($lastFailedStatus) {
-                            $now = new DateTime('now');
-                            $downTimeDiff = $now->diff($lastFailedStatus->getDatetime());
-                            $days = $downTimeDiff->d;
-                            $hours = $downTimeDiff->h;
-                            $minutes = $downTimeDiff->i <= 10 ? 0 : $downTimeDiff->i;
-                            $seconds = $downTimeDiff->s;
-                            $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $days, $hours, $minutes, $seconds);
-                            $text = sprintf('Site "%s" is currenty UP. Downtime: %s', $site->getDomain(), $downtime) . "\n\r";
-                            $output->writeln($text);
-                        } else {
-                            $text = sprintf('Site "%s" is currenty UP.', $site->getDomain()) . "\n\r";
-                        }
+                    if ($this->checkContentIsError($content)) {
+                        $text = sprintf('Site "%s" answer with %s code. But Exception or Error exists on page', $site->getDomain(), $currentStatus) . "\n\r";
                         $this->sendMessage($statusBot, $site, $chat, $text);
+                    } else {
+                        if ($lastStatus->getHttpCode() !== 200) {
+                            if ($lastFailedStatus) {
+                                $now = new DateTime('now');
+                                $downTimeDiff = $now->diff($lastFailedStatus->getDatetime());
+                                $days = $downTimeDiff->d;
+                                $hours = $downTimeDiff->h;
+                                $minutes = $downTimeDiff->i <= 10 ? 0 : $downTimeDiff->i;
+                                $seconds = $downTimeDiff->s;
+                                $downtime = sprintf('%s days, %s hours, %s minutes, %s seconds', $days, $hours, $minutes, $seconds);
+                                $text = sprintf('Site "%s" is currenty UP. Downtime: %s', $site->getDomain(), $downtime) . "\n\r";
+                                $output->writeln($text);
+                            } else {
+                                $text = sprintf('Site "%s" is currenty UP.', $site->getDomain()) . "\n\r";
+                            }
+                            $this->sendMessage($statusBot, $site, $chat, $text);
+                        }
                     }
                     break;
 
@@ -154,7 +159,7 @@ class DaemonStatusCommand extends Command
                 case StatusRepository::CODE_SERVER_502:
                 case StatusRepository::CODE_SERVER_503:
                 case StatusRepository::CODE_SERVER_504:
-                    if ($lastStatus->getHttpCode() === 200 && !$this->checkContentIsError($content)) {
+                    if ($lastStatus->getHttpCode() === 200) {
                         $this->log($currentStatus, $latency, $site, $content);
                         $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $currentStatus, $latency) . "\n\r";
                         $output->writeln($text);
@@ -168,17 +173,7 @@ class DaemonStatusCommand extends Command
 
     private function checkContentIsError(string $content)
     {
-        if (strpos($content, 'Exception') !== false) {
-            return true;
-        }
-        if (strpos($content, 'Error') !== false) {
-            return true;
-        }
-        if (strpos($content, 'error') !== false) {
-            return true;
-        }
-
-        return false;
+        return preg_match('/(Exception)|(Error)/m', $content);
     }
 
     /**
