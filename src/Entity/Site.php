@@ -35,7 +35,7 @@ class Site
     private $priority;
 
     /**
-     * @ORM\OneToMany(targetEntity=Status::class, mappedBy="log_site")
+     * @ORM\OneToMany(targetEntity=Status::class, mappedBy="log_site", cascade={"remove"})
      */
     private $log_statuses;
 

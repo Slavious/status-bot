@@ -10,6 +10,8 @@
                     <th scope="col">domain</th>
                     <th scope="col">priority</th>
                     <th scope="col"></th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
                 </thead>
                 <tbody>
                     {% for site in sites %}
@@ -19,8 +21,18 @@
                             <td>{{ site.domain }}</td>
                             <td>{{ site.priority }}</td>
                             <td>
-                                <a class="btn btn-primary" href="{{ path('site_edit', { siteId: site.id }) }}">
+                                <a class="btn btn-success" href="{{ path('site_log', { site: site.id }) }}">
+                                    Stats
+                                </a>
+                            </td>
+                            <td>
+                                <a class="btn btn-warning" href="{{ path('site_edit', { siteId: site.id }) }}">
                                     Edit
+                                </a>
+                            </td>
+                            <td>
+                                <a class="btn btn-danger" href="{{ path('site_remove', { id: site.id }) }}">
+                                    Remove
                                 </a>
                             </td>
                         </tr>

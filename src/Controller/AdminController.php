@@ -7,13 +7,23 @@ use App\Entity\Status;
 use App\Repository\StatusRepository;
 use CMEN\GoogleChartsBundle\GoogleCharts\Charts\Material\LineChart;
 use Doctrine\DBAL\Driver\PDOException;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\VarDumper\VarDumper;
 
 class AdminController extends BaseController
 {
+    protected $entityManager;
+
+    public function __construct(EntityManagerInterface $entityManager)
+    {
+        $this->entityManager = $entityManager;
+    }
+
     /**
      * @Route("/admin", name="admin")
      */
@@ -170,5 +180,20 @@ class AdminController extends BaseController
         foreach ($logs as $log) {
             $code[$log] = $log->getHttpCode();
         }
+    }
+
+    /**
+     * @Route ("/admin/site-delete/{id}", name="site_remove")
+     */
+    public function deleteSite($id)
+    {
+        $site = $this->getDoctrine()->getRepository('App:Site')->find($id);
+        if (!$site) {
+            throw new NotFoundHttpException('Site not found');
+        }
+        $this->entityManager->remove($site);
+        $this->entityManager->flush();
+
+        return $this->redirectToRoute('site_list');
     }
 }

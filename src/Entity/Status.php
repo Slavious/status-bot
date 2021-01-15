@@ -35,7 +35,7 @@ class Status
     private $datetime;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Site::class, inversedBy="log_statuses")
+     * @ORM\ManyToOne(targetEntity=Site::class, inversedBy="log_statuses", cascade={"persist"})
      */
     private $log_site;
 
