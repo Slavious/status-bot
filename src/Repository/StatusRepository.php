@@ -94,6 +94,7 @@ class StatusRepository extends ServiceEntityRepository
     public function getFailedLastStatus(Site $site)
     {
         return $this->createQueryBuilder('s')
+            ->select('s.id, s.datetime')
             ->where('s.http_code != 200')
             ->andWhere('s.log_site = :site')->setParameter('site', $site)
             ->orderBy('s.datetime', 'DESC')

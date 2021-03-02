@@ -11,6 +11,7 @@ use App\Repository\StatusRepository;
 use Borsaco\TelegramBotApiBundle\Service\Bot;
 use DateTime;
 use Doctrine\ORM\EntityManager;
+use Illuminate\Support\Facades\Date;
 use PDOException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -20,6 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\VarDumper\VarDumper;
 use Telegram\Bot\Api;
 use Telegram\Bot\Exceptions\TelegramSDKException;
 use function Symfony\Component\String\b;
@@ -81,8 +83,9 @@ class DaemonStatusCommand extends Command
         $this->filesystem = $this->container->get('filesystem');
 
         $runningFile = $this->logDir . '/status.run';
+
         if (!$this->filesystem->exists($runningFile)) {
-            file_put_contents($runningFile, 'running');
+            file_put_contents($runningFile, (new DateTime())->format('Y-m-d H:m:s'));
             $output->writeln('Proccess started');
             if ($this->process($statusBot, $output)) {
                 $output->writeln('Proccess finished');
@@ -90,8 +93,17 @@ class DaemonStatusCommand extends Command
             }
         } else {
             $output->writeln('Proccess is already running');
+            $fileCreated = fgets(fopen($runningFile, 'r'));
+            $dateCreated = false;
+            if ($fileCreated !== '') {
+                $dateCreated = new DateTime($fileCreated);
+            }
+            $now = new DateTime();
+            $dateDiff = $now->diff($dateCreated);
+            if ($dateDiff->i >= 5 || !$fileCreated) {
+                unlink($runningFile);
+            }
         }
-
         return Command::SUCCESS;
     }
 
@@ -112,8 +124,7 @@ class DaemonStatusCommand extends Command
             $statusModel = new SiteStatus($site->getDomain());
             $currentStatus = $statusModel->getStatus();
             $latency = $statusModel->getLatency();
-            $content = $statusModel->getContent();
-
+            $content = strip_tags($statusModel->getContent());
             /** @var Status $lastStatus */
             $lastStatus = $site->getLogStatuses()->last();
             $lastFailedStatus = $this->doctrine->getRepository(Status::class)->getFailedLastStatus($site);
@@ -171,9 +182,12 @@ class DaemonStatusCommand extends Command
         return true;
     }
 
-    private function checkContentIsError(string $content)
+    private function checkContentIsError($content)
     {
-        return preg_match('/(Exception)|(Error)/m', $content);
+        if ($content) {
+            return preg_match('/(Exception)|(Error)|(Report)/m', $content);
+        }
+        return false;
     }
 
     /**
@@ -184,7 +198,7 @@ class DaemonStatusCommand extends Command
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function log(int $httCode, string $latency, Site $site, string $content)
+    public function log(int $httCode, string $latency, Site $site, $content = null)
     {
         $log = new Status();
         $log->setDatetime(new DateTime());
@@ -197,7 +211,7 @@ class DaemonStatusCommand extends Command
             $this->doctrine->persist($log);
             $this->doctrine->flush();
         } catch (PDOException $exception) {
-
+            var_dump($exception->getMessage());
         }
     }
 
