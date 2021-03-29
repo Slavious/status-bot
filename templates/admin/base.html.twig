@@ -18,8 +18,12 @@
 
         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             <div class="navbar-nav">
-                <a class="nav-link active" href="{{ path('site_list') }}">Site list<span class="sr-only"></span></a>
-                <a class="nav-link" href="{{ path('site_add') }}">Site add<span class="sr-only"></span></a>
+                <a class="nav-link active" href="{{ path('site_list') }}">
+                    Site list<span class="sr-only"></span>
+                </a>
+                <a class="nav-link" href="{{ path('site_add') }}">
+                    Site add<span class="sr-only"></span>
+                </a>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Site logs
@@ -32,7 +36,12 @@
                         {% endfor %}
                     </div>
                 </li>
-                <a class="nav-link" href="{{ path('site_list') }}">Statistic<span class="sr-only"></span></a>
+                <a class="nav-link" href="{{ path('site_list') }}">
+                    Statistic<span class="sr-only"></span>
+                </a>
+                <a class="nav-link" href="{{ path('check_imports') }}">
+                    Check imports<span class="sr-only"></span>
+                </a>
             </div>
         </div>
     </nav>

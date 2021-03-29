@@ -41,9 +41,29 @@ class BotController extends AbstractController
     {
         $statusBot = $bot->getBot('status');
         $update = $statusBot->getUpdates();
-
         if ($update) {
             foreach ($update as $item) {
+                $chatID = $item["message"]["chat"]["id"];
+                if ($text = $item['message']['text']) {
+                    switch ($text) {
+                        case '/test':
+                            $statusBot->sendMessage(['chat_id' => $chatID, 'text' => 'Test succeed']);
+                            break;
+                        case '/bikestore':
+                            $statusBot->sendMessage(['chat_id' => $chatID, 'text' => 'bikestore succeed']);
+                            break;
+                        case '/bikemarket':
+                            $statusBot->sendMessage(['chat_id' => $chatID, 'text' => 'bikemarket succeed']);
+                            break;
+                        case '/fm':
+                            $statusBot->sendMessage(['chat_id' => $chatID, 'text' => 'fm succeed']);
+                            break;
+                        case '/bikezeit':
+                            $statusBot->sendMessage(['chat_id' => $chatID, 'text' => 'bikezeit succeed']);
+                            break;
+                    }
+                }
+
                 $chatId = $item["message"]["chat"]["id"];
                 $title = $item['message']['chat']['title'];
 

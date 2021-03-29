@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Site;
 use App\Entity\Status;
+use App\Model\Curl;
+use App\Model\ImportCheck;
 use App\Repository\StatusRepository;
 use CMEN\GoogleChartsBundle\GoogleCharts\Charts\Material\LineChart;
 use Doctrine\DBAL\Driver\PDOException;
@@ -49,6 +51,7 @@ class AdminController extends BaseController
         $name = $request->get('name');
         $domain = $request->get('domain');
         $priority = $request->get('priority');
+        $domainName = $request->get('domain_name');
 
         if (!$name || !$domain) {
             return $this->json(['success' => false, 'error' => 'Name or domain is required']);
@@ -58,6 +61,7 @@ class AdminController extends BaseController
         $site->setName($name);
         $site->setDomain($domain);
         $site->setPriority($priority);
+        $site->setDomainName($domainName);
 
         $this->getDoctrine()->getManager()->persist($site);
         $this->getDoctrine()->getManager()->flush();
@@ -149,11 +153,13 @@ class AdminController extends BaseController
             $name = $request->get('name');
             $domain = $request->get('domain');
             $priority = $request->get('priority');
+            $domainName = $request->get('domain_name');
 
             if ($name && $domain && $priority) {
                 try {
                     $site->setName($name);
                     $site->setDomain($domain);
+                    $site->setDomainName($domainName);
                     $site->setPriority($priority);
                     $this->getDoctrine()->getManager()->persist($site);
                     $this->getDoctrine()->getManager()->flush();
@@ -195,5 +201,23 @@ class AdminController extends BaseController
         $this->entityManager->flush();
 
         return $this->redirectToRoute('site_list');
+    }
+
+    /**
+     * @Route ("/admin/check-imports", name="check_imports")
+     */
+    public function checkImports()
+    {
+        $sites = $this->getDoctrine()->getRepository('App:Site')->findBy(['priority' => 3]);
+
+        $url = 'import/index/index';
+
+        foreach ($sites as $site) {
+            if (stripos($site->getName(), 'search') !== false) continue;
+//            VarDumper::dump($site->getDomain() . $url);
+           echo @file_get_contents($site->getDomain() . 'import/index/index') . '<br />';
+        }
+        die();
+//        return $this->render('admin/check_import.html.twig', ['result' => $result]);
     }
 }

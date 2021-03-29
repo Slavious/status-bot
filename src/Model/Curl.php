@@ -44,6 +44,11 @@ class Curl
         return $this->result;
     }
 
+    public function getInfo()
+    {
+        return $this->info;
+    }
+
     /**
      * @return array
      */
