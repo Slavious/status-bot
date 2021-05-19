@@ -209,13 +209,11 @@ class AdminController extends BaseController
     public function checkImports()
     {
         $sites = $this->getDoctrine()->getRepository('App:Site')->findBy(['priority' => 3]);
-
-        $url = 'import/index/index';
-
         foreach ($sites as $site) {
             if (stripos($site->getName(), 'search') !== false) continue;
-//            VarDumper::dump($site->getDomain() . $url);
-           echo @file_get_contents($site->getDomain() . 'import/index/index') . '<br />';
+            if (stripos($site->getName(), 'cube') !== false) continue;
+            echo $site->getDomain().'<br />';
+            echo @file_get_contents($site->getDomain() . 'import/index/index') . '<hr />';
         }
         die();
 //        return $this->render('admin/check_import.html.twig', ['result' => $result]);
