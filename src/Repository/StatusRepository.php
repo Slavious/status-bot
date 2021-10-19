@@ -29,6 +29,7 @@ class StatusRepository extends ServiceEntityRepository
     public const CODE_SERVER_502 = 502;
     public const CODE_SERVER_503 = 503;
     public const CODE_SERVER_504 = 504;
+    public const CODE_SERVER_403 = 403;
     public const CODE_SERVER_0 = 0;
 
     private $periodStart;

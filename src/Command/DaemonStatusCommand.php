@@ -124,7 +124,7 @@ class DaemonStatusCommand extends Command
             $statusModel = new SiteStatus($site->getDomain());
             $currentStatus = $statusModel->getStatus();
             $latency = $statusModel->getLatency();
-            $content = strip_tags($statusModel->getContent());
+            $content = $statusModel->getContent();
             /** @var Status $lastStatus */
             $lastStatus = $site->getLogStatuses()->last();
             $lastFailedStatus = $this->doctrine->getRepository(Status::class)->getFailedLastStatus($site);
@@ -142,8 +142,8 @@ class DaemonStatusCommand extends Command
             switch ($currentStatus) {
                 case StatusRepository::CODE_OK:
                     $this->log($currentStatus, $latency, $site, $content);
-                    if ($this->checkContentIsError($content)) {
-                        $text = sprintf('Exception or Error exists on page %site', $site->getDomain()) . "\n\r";
+                    if ($message = $this->checkContentIsError($content)) {
+                        $text = sprintf($message, $site->getDomain());
                         $this->sendMessage($statusBot, $site, $chat, $text);
                     } else {
                         if ($lastStatus->getHttpCode() !== 200) {
@@ -179,14 +179,44 @@ class DaemonStatusCommand extends Command
                     break;
             }
         }
+
+        $this->checkImports($statusBot, $chat);
+
         return true;
     }
 
+    public function checkImports($statusBot, $chat)
+    {
+        $sites = $this->doctrine->getRepository('App:Site')->findAll();
+        /** @var Site $site */
+        foreach ($sites as $site) {
+            if (stripos($site->getDomain(), 'cube-store') !== false) continue;
+            $url = "https://".$site->getDomainName()."/import?bot";
+            $siteStatus = new SiteStatus($url);
+            $content = $siteStatus->getContent();
+            if ($content && $site->getPriority() === 3 && stripos($content, 'not working!!!') !== false) {
+                $this->sendMessageImport($statusBot, $url, $chat, $content . ' on ' . $site->getDomainName());
+            }
+        }
+    }
+
+    const CATEGORY_EMPTY_STRING = '<div>Leider können wir keine passenden Produkte zu ihrer Auswahl finden.</div>';
+
+    /**
+     * @param $content
+     * @return bool|int|void
+     */
     private function checkContentIsError($content)
     {
-        if ($content) {
-            return preg_match('/(Exception)|(Error)|(Report)/m', $content);
-        }
+
+        /*if ($content) {
+            if (stripos($content, self::CATEGORY_EMPTY_STRING) !== false) {
+                return 'Category page is empty! %s';
+            }
+            if (preg_match('/(Exception)|(Error)|(Report)/m', $content)) {
+                return 'Exception or Error exists on page %s';
+            }
+        }*/
         return false;
     }
 
@@ -226,5 +256,16 @@ class DaemonStatusCommand extends Command
         if ($site->getPriority() === 3) {
             $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
         }
+    }
+
+    /**
+     * @param Api $statusBot
+     * @param string $site
+     * @param TelegramAccount $chat
+     * @param string $text
+     */
+    public function sendMessageImport(Api $statusBot, $site, TelegramAccount $chat, string $text)
+    {
+        $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
     }
 }
