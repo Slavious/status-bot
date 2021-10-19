@@ -44,6 +44,11 @@ class Site
      */
     private $domain_name;
 
+    /**
+     * @ORM\ManyToOne(targetEntity=TelegramAccount::class, inversedBy="sites")
+     */
+    private $telegram_group;
+
     public function __toString()
     {
         return $this->name;
@@ -138,6 +143,18 @@ class Site
     public function setDomainName(?string $domain_name): self
     {
         $this->domain_name = $domain_name;
+
+        return $this;
+    }
+
+    public function getTelegramGroup(): ?TelegramAccount
+    {
+        return $this->telegram_group;
+    }
+
+    public function setTelegramGroup(?TelegramAccount $telegram_group): self
+    {
+        $this->telegram_group = $telegram_group;
 
         return $this;
     }

@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TelegramAccountRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -31,6 +33,16 @@ class TelegramAccount
      * @ORM\Column(type="boolean")
      */
     private $active;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Site::class, mappedBy="telegram_group")
+     */
+    private $sites;
+
+    public function __construct()
+    {
+        $this->sites = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -69,6 +81,36 @@ class TelegramAccount
     public function setActive(bool $active): self
     {
         $this->active = $active;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Site[]
+     */
+    public function getSites(): Collection
+    {
+        return $this->sites;
+    }
+
+    public function addSite(Site $site): self
+    {
+        if (!$this->sites->contains($site)) {
+            $this->sites[] = $site;
+            $site->setTelegramGroup($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSite(Site $site): self
+    {
+        if ($this->sites->removeElement($site)) {
+            // set the owning side to null (unless already changed)
+            if ($site->getTelegramGroup() === $this) {
+                $site->setTelegramGroup(null);
+            }
+        }
 
         return $this;
     }
