@@ -26,4 +26,9 @@ class SiteStatus
         return $this->curlInfo->getContent();
     }
 
+    public function getError()
+    {
+        return $this->curlInfo->getError();
+    }
+
 }

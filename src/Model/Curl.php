@@ -12,6 +12,8 @@ class Curl
 
     private $url;
 
+    private $error;
+
     public function __construct($url)
     {
         $this->url = $url;
@@ -24,9 +26,15 @@ class Curl
         curl_setopt_array($curl, self::getOptions());
         $this->result = curl_exec($curl);
         $this->info = curl_getinfo($curl);
+        $this->error = curl_errno($curl);
         curl_close($curl);
 
         return $this->result;
+    }
+
+    public function getError()
+    {
+        return $this->error;
     }
 
     public function getStatus()
@@ -61,8 +69,8 @@ class Curl
             CURLOPT_MAXREDIRS => 10,
             CURLOPT_ENCODING => "",
             CURLOPT_AUTOREFERER => true,
-            CURLOPT_CONNECTTIMEOUT => 15,
-            CURLOPT_TIMEOUT => 15,
+            CURLOPT_CONNECTTIMEOUT => 30,
+            CURLOPT_TIMEOUT => 30,
             CURLOPT_USERAGENT => "status-bot.awag-it.de - Test request",
         ];
     }

@@ -23,6 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\VarDumper\VarDumper;
 use Telegram\Bot\Api;
+use Telegram\Bot\Exceptions\TelegramResponseException;
 use Telegram\Bot\Exceptions\TelegramSDKException;
 use function Symfony\Component\String\b;
 
@@ -116,11 +117,10 @@ class DaemonStatusCommand extends Command
     {
         /** @var EntityManager $doctrine */
         $sites = $this->doctrine->getRepository(Site::class)->findAll();
-        //TODO Rework this hardcode shit
-        $chat = $this->doctrine->getRepository(TelegramAccount::class)->find(1);
 
         /** @var Site $site */
         foreach ($sites as $site) {
+            $chat = $site->getTelegramGroup();
             $statusModel = new SiteStatus($site->getDomain());
             $currentStatus = $statusModel->getStatus();
             $latency = $statusModel->getLatency();
@@ -136,20 +136,34 @@ class DaemonStatusCommand extends Command
                 continue;
             }
 
+            if (!$statusModel->getStatus() || $statusModel->getError()) {
+                $message = sprintf('Site %s timeout expired! %s', $site->getName(), $site->getDomain());
+                $this->sendMessage($statusBot, $site, $chat, $message);
+            }
+
             $consoleLogMessage = sprintf('Site %s ', $site->getName());
             $output->writeln($consoleLogMessage);
 
             switch ($currentStatus) {
                 case StatusRepository::CODE_OK:
                     $this->log($currentStatus, $latency, $site, $content);
-                    if ($message = $this->checkContentIsError($content)) {
+                    if (
+                        ($message = $this->checkContentIsError($content))
+                        && $chat->getId() === 1
+                        && $site->getDomainName() !== 'pizzastores.de'
+                        && $site->getDomainName() !== 'pizzastores.de'
+                        && $site->getDomainName() !== 'system.meisterpizza.de'
+                    ) {
                         $text = sprintf($message, $site->getDomain());
                         $this->sendMessage($statusBot, $site, $chat, $text);
                     } else {
-                        if ($lastStatus->getHttpCode() !== 200) {
+                        /*if (
+                            $lastStatus->getHttpCode() !== 200
+                            or strpos($content, "Magento") === false
+                        ) {
                             if ($lastFailedStatus) {
                                 $now = new DateTime('now');
-                                $downTimeDiff = $now->diff($lastFailedStatus->getDatetime());
+                                $downTimeDiff = $now->diff($lastFailedStatus['datetime']);
                                 $days = $downTimeDiff->d;
                                 $hours = $downTimeDiff->h;
                                 $minutes = $downTimeDiff->i <= 10 ? 0 : $downTimeDiff->i;
@@ -161,7 +175,7 @@ class DaemonStatusCommand extends Command
                                 $text = sprintf('Site "%s" is currenty UP.', $site->getDomain()) . "\n\r";
                             }
                             $this->sendMessage($statusBot, $site, $chat, $text);
-                        }
+                        }*/
                     }
                     break;
 
@@ -174,22 +188,25 @@ class DaemonStatusCommand extends Command
                         $this->log($currentStatus, $latency, $site, $content);
                         $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $currentStatus, $latency) . "\n\r";
                         $output->writeln($text);
-                        $this->sendMessage($statusBot, $site, $chat, $text);
+                    } else {
+                        $text = sprintf('Site "%s" answer with %s code. Time to response %s.', $site->getDomain(), $currentStatus, $latency) . "\n\r";
                     }
-                    break;
+                $this->sendMessage($statusBot, $site, $chat, $text);
+                break;
             }
         }
 
-        $this->checkImports($statusBot, $chat);
+        $this->checkImports($statusBot);
 
         return true;
     }
 
-    public function checkImports($statusBot, $chat)
+    public function checkImports($statusBot)
     {
         $sites = $this->doctrine->getRepository('App:Site')->findAll();
         /** @var Site $site */
         foreach ($sites as $site) {
+            $chat = $site->getTelegramGroup();
             if (stripos($site->getDomain(), 'cube-store') !== false) continue;
             $url = "https://".$site->getDomainName()."/import?bot";
             $siteStatus = new SiteStatus($url);
@@ -209,14 +226,17 @@ class DaemonStatusCommand extends Command
     private function checkContentIsError($content)
     {
 
-        /*if ($content) {
-            if (stripos($content, self::CATEGORY_EMPTY_STRING) !== false) {
+        if ($content) {
+            /*if (stripos($content, self::CATEGORY_EMPTY_STRING) !== false) {
                 return 'Category page is empty! %s';
             }
             if (preg_match('/(Exception)|(Error)|(Report)/m', $content)) {
                 return 'Exception or Error exists on page %s';
+            }*/
+            if (stripos($content, 'Magento') === false) {
+                return 'Magento is not find on page %s';
             }
-        }*/
+        }
         return false;
     }
 
@@ -254,7 +274,11 @@ class DaemonStatusCommand extends Command
     public function sendMessage(Api $statusBot, Site $site, TelegramAccount $chat, string $text)
     {
         if ($site->getPriority() === 3) {
-            $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
+            try {
+                $statusBot->sendMessage(['chat_id' => $chat->getChatId(), 'text' => $text]);
+            } catch (TelegramResponseException $exception) {
+                var_dump($exception->getMessage());
+            }
         }
     }
 
